@@ -1,7 +1,8 @@
 
 
 from __future__ import print_function
-from dronekit import connect, VehicleMode, APIException
+from dronekit import connect, VehicleMode, APIException, LocationGlobalRelative, LocationGlobal, Command
+from pymavlink import mavutil
 import socket
 import exceptions
 from sys import exit
@@ -52,6 +53,17 @@ def arm_and_takeoff(aVehicle,aTargetAltitude):
     """
     Arms vehicle and fly to aTargetAltitude.
     """
+    download_mission()
+
+    cmds = vehicle.commands
+
+    print(" Clear any existing commands")
+    cmds.clear() 
+
+    #Add MAV_CMD_NAV_TAKEOFF command. This is ignored if the vehicle is already in the air.
+    cmds.add(Command( 0, 0, 0, mavutil.mavlink.MAV_FRAME_GLOBAL_RELATIVE_ALT, mavutil.mavlink.MAV_CMD_NAV_TAKEOFF, 0, 0, 0, 0, 0, 0, 0, 0, 50))
+    print(" Upload new commands to vehicle")
+    cmds.upload()
 
     print("Basic pre-arm checks")
     # Don't try to arm until autopilot is ready
@@ -84,8 +96,29 @@ def arm_and_takeoff(aVehicle,aTargetAltitude):
             break
         time.sleep(1)
 
+def download_mission():
+    """
+    Download the current mission from the vehicle.
+    """
+    cmds = vehicle.commands
+    cmds.download()
+    cmds.wait_ready() # wait until download is complete.
+
 vehicle = safe_connect()
-arm_and_takeoff(vehicle,50);
+
+if vehicle.groundspeed < 0.1:
+    print("Arming and taking-off!")
+    arm_and_takeoff(vehicle,50);
+    print("Set default/target airspeed to 30")
+    vehicle.groundspeed = 30
+else:
+    print("Looks like the vehicle is in flight already!")
+
+vehicle.mode = VehicleMode("GUIDED")
+
+
+# print("Returning to Launch")
+# vehicle.mode = VehicleMode("RTL")
 
 # Close vehicle object before exiting script
 vehicle.close()
