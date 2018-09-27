@@ -8,10 +8,11 @@ parser = argparse.ArgumentParser(
     description='DroneKit experiments.')
 parser.add_argument('--connect',
                     help="vehicle connection target string. If not specified, script connects to 127.0.0.1:14551 by default.")
+parser.add_argument('--baud',
+                    help="baudrate of the serial connections. Default is 115200.")                    
 args = parser.parse_args()
 
-connection_string = args.connect
-vehicle = connection.safe_connect(connection_string)
+vehicle = connection.safe_connect(args.connect, args.baud)
 guidance.safe_takeoff(vehicle,50)
 
 # Close vehicle object before exiting script
