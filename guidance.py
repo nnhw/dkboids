@@ -6,16 +6,28 @@ import time
 import math
 import connection
 
-def safe_takeoff(vehicle, target_altitude):
-    if vehicle.groundspeed < 0.1:
-        print("Arming and taking-off!")
-        arm_and_takeoff(vehicle, target_altitude)
-        print("Set default/target airspeed to 30")
-        vehicle.groundspeed = 30
+def takeoff(vehicle, target_altitude, safety):
+    if not safety:
+        safety = True
     else:
-        print("Looks like the vehicle is in flight already!")
+        if safety == "on":
+            safety = True
+        elif safety == "off":
+            safety = False
 
-def arm_and_takeoff(vehicle, aTargetAltitude):
+    if safety is True:
+        if vehicle.groundspeed < 0.1:
+            print("Arming and taking-off!")
+            arm_and_takeoff(vehicle, target_altitude, safety)
+            print("Set default/target airspeed to 30")
+            vehicle.groundspeed = 30
+        else:
+            print("Looks like the vehicle is in flight already!")
+    else:
+        print("Ignoring everything, trying to take off")
+        arm_and_takeoff(vehicle, target_altitude, safety)
+
+def arm_and_takeoff(vehicle, aTargetAltitude, safety):
     """
     Arms vehicle and fly to aTargetAltitude.
     """
@@ -28,15 +40,16 @@ def arm_and_takeoff(vehicle, aTargetAltitude):
 
     # Add MAV_CMD_NAV_TAKEOFF command. This is ignored if the vehicle is already in the air.
     cmds.add(Command(0, 0, 0, mavutil.mavlink.MAV_FRAME_GLOBAL_RELATIVE_ALT,
-                     mavutil.mavlink.MAV_CMD_NAV_TAKEOFF, 0, 0, 0, 0, 0, 0, 0, 0, 50))
+                     mavutil.mavlink.MAV_CMD_NAV_TAKEOFF, 0, 0, 0, 0, 0, 0, 0, 0, aTargetAltitude))
     print(" Upload new commands to vehicle")
     cmds.upload()
 
-    print("Basic pre-arm checks")
-    # Don't try to arm until autopilot is ready
-    while not vehicle.is_armable:
-        print(" Waiting for vehicle to initialise...")
-        time.sleep(1)
+    if safety is True:
+        print("Basic pre-arm checks")
+        # Don't try to arm until autopilot is ready
+        while not vehicle.is_armable:
+            print(" Waiting for vehicle to initialise...")
+            time.sleep(1)
 
     print("Arming motors")
     # Plane should arm first

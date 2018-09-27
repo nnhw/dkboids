@@ -6,13 +6,14 @@ import exceptions
 from sys import exit
 
 def safe_connect(connection_string,baudrate):
-    
 
     if not connection_string:
         connection_string = "127.0.0.1:14551"
 
     if not baudrate:
         baudrate = 57600
+    else:
+        baudrate = int(baudrate)
 
     # Connect to the Vehicle.
     print("Connecting to vehicle on: %s" % (connection_string,))
