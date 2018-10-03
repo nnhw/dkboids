@@ -4,6 +4,9 @@ import argparse
 import connection
 import guidance
 import cmd
+import time
+from threading import Thread
+import sys
 
 parser = argparse.ArgumentParser(
     description='DroneKit experiments.')
@@ -18,6 +21,19 @@ parser.add_argument('--id',
 
 args = parser.parse_args()
 
+def start_data_flow():
+    data_flow_thread = Thread(target=data_flow_handler)
+    data_flow_thread.daemon = True
+    data_flow_thread.start()
+
+def data_flow_handler():
+    global update_rate_hz
+    while True:
+        time.sleep(1/update_rate_hz)
+        data = connection_buddy.receive_data(1024)
+        print(data)
+
+
 class ConvertShell(cmd.Cmd):
     intro = 'Welcome to the Converter shell. Type help or ? to list commands.\n'
     prompt = '(command) '
@@ -27,11 +43,16 @@ class ConvertShell(cmd.Cmd):
         guidance.takeoff(vehicle, parse(arg), args.safety)
         print("Taking off completed")
 
-    def do_send_arm(self,arg):
-        'send arm command using message factory'
-        msg = vehicle.message_factory.param_set_encode(1,0,"400",1,1)
-        print(msg)
-        vehicle.send_mavlink(msg)
+    def do_send(self, arg):
+        connection_buddy.send_data("kek!")
+
+    def do_receive(self, arg):
+        data = connection_buddy.receive_data(1024)
+        print(data)
+
+    def do_start_flow(self, arg):
+        'Start data flow'
+        start_data_flow()
 
     def do_bye(self, arg):
         'Exit'
@@ -50,5 +71,7 @@ def parse(arg):
 
 
 if __name__ == "__main__":
-    vehicle = connection.safe_dk_connect(args.master, args.baud, args.id)
+    # vehicle = connection.safe_dk_connect(args.master, args.baud, args.id)
+    connection_buddy = connection.socket_connection(8000)
+    update_rate_hz = 10
     ConvertShell().cmdloop()
