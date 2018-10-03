@@ -16,11 +16,6 @@ def safe_dk_connect(connection_string,baudrate,id):
     else:
         baudrate = int(baudrate)
 
-    if not id:
-        id=255
-    else:
-        id = int(id)
-
     # Connect to the Vehicle.
     print("Connecting to vehicle on: %s" % (connection_string,))
 
@@ -71,7 +66,6 @@ class socket_connection:
     def send_data(self, l_data):
         self._data_send = l_data
         self._sock.sendto(self._data_send, self._multicast_group)
-        # self._sock.close()
 
     def receive_data(self, l_size):
         self._data_rcv = self._sock.recvfrom(l_size)[0]

@@ -7,6 +7,7 @@ import cmd
 import time
 from threading import Thread
 import sys
+import struct
 
 parser = argparse.ArgumentParser(
     description='DroneKit experiments.')
@@ -21,18 +22,34 @@ parser.add_argument('--id',
 
 args = parser.parse_args()
 
-def start_data_flow():
-    data_flow_thread = Thread(target=data_flow_handler)
-    data_flow_thread.daemon = True
-    data_flow_thread.start()
+if not args.id:
+    id=255
+else:
+    id = int(args.id)
 
-def data_flow_handler():
+def start_data_flow_out():
+    data_flow_out_thread = Thread(target=data_flow_handler_out)
+    data_flow_out_thread.daemon = True
+    data_flow_out_thread.start()
+
+def start_data_flow_in():
+    data_flow_in_thread = Thread(target=data_flow_handler_in)
+    data_flow_in_thread.daemon = True
+    data_flow_in_thread.start()
+
+def data_flow_handler_out():
+    global update_rate_hz
+    while True:
+        time.sleep(1/update_rate_hz)
+        data = struct.pack('!ifff', id, vehicle.location.global_relative_frame.lat, vehicle.location.global_relative_frame.lon, vehicle.location.global_relative_frame.alt)
+        connection_buddy.send_data(data)
+
+def data_flow_handler_in():
     global update_rate_hz
     while True:
         time.sleep(1/update_rate_hz)
         data = connection_buddy.receive_data(1024)
-        print(data)
-
+        print(struct.unpack('!ifff', data))
 
 class ConvertShell(cmd.Cmd):
     intro = 'Welcome to the Converter shell. Type help or ? to list commands.\n'
@@ -50,9 +67,13 @@ class ConvertShell(cmd.Cmd):
         data = connection_buddy.receive_data(1024)
         print(data)
 
-    def do_start_flow(self, arg):
-        'Start data flow'
-        start_data_flow()
+    def do_start_flow_out(self, arg):
+        'Start outgoing data flow'
+        start_data_flow_out()
+
+    def do_start_flow_in(self, arg):
+        'Start incoming data flow'
+        start_data_flow_in()
 
     def do_bye(self, arg):
         'Exit'
@@ -71,7 +92,7 @@ def parse(arg):
 
 
 if __name__ == "__main__":
-    # vehicle = connection.safe_dk_connect(args.master, args.baud, args.id)
+    vehicle = connection.safe_dk_connect(args.master, args.baud, id)
     connection_buddy = connection.socket_connection(8000)
-    update_rate_hz = 10
+    update_rate_hz = 1
     ConvertShell().cmdloop()
