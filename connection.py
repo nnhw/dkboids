@@ -6,7 +6,7 @@ import exceptions
 import socket
 from sys import exit
 
-def safe_dk_connect(connection_string,baudrate):
+def safe_dk_connect(connection_string,baudrate,id):
 
     if not connection_string:
         connection_string = "127.0.0.1:14551"
@@ -16,12 +16,17 @@ def safe_dk_connect(connection_string,baudrate):
     else:
         baudrate = int(baudrate)
 
+    if not id:
+        id=255
+    else:
+        id = int(id)
+
     # Connect to the Vehicle.
     print("Connecting to vehicle on: %s" % (connection_string,))
 
     try:
         vehicle = connect(connection_string, baud=baudrate,
-                          heartbeat_timeout=15, wait_ready=True)
+                          heartbeat_timeout=15, wait_ready=True,source_system=id)
 
     # Bad TCP connection
     except socket.error:

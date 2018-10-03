@@ -20,7 +20,7 @@ def takeoff(vehicle, target_altitude, safety):
         target_altitude = 50
 
     if safety is True:
-        if vehicle.groundspeed < 0.1:
+        if vehicle.groundspeed < 0.3:
             print("Arming and taking-off!")
             arm_and_takeoff(vehicle, target_altitude, safety)
             print("Set default/target airspeed to 30")

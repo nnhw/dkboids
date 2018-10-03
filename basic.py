@@ -13,6 +13,8 @@ parser.add_argument('--baud',
                     help="baudrate of the serial connections. Default is 115200.")
 parser.add_argument('--safety',
                     help="on/off - disable or enable safety checks. Default is on")
+parser.add_argument('--id',
+                    help="mavlink system ID of this instance")
 
 args = parser.parse_args()
 
@@ -24,6 +26,12 @@ class ConvertShell(cmd.Cmd):
         'takeoff <altitude>; load a program, takeoff and reach target altitude'
         guidance.takeoff(vehicle, parse(arg), args.safety)
         print("Taking off completed")
+
+    def do_send_arm(self,arg):
+        'send arm command using message factory'
+        msg = vehicle.message_factory.param_set_encode(1,0,"400",1,1)
+        print(msg)
+        vehicle.send_mavlink(msg)
 
     def do_bye(self, arg):
         'Exit'
@@ -42,5 +50,5 @@ def parse(arg):
 
 
 if __name__ == "__main__":
-    vehicle = connection.safe_dk_connect(args.master, args.baud)
+    vehicle = connection.safe_dk_connect(args.master, args.baud, args.id)
     ConvertShell().cmdloop()
