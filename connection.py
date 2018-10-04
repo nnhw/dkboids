@@ -1,9 +1,11 @@
 from __future__ import print_function
-from dronekit import connect, APIException
+import dronekit
 
 import struct
 import socket
 import exceptions
+import boid_def
+import re
 from sys import exit
 
 def safe_dk_connect(connection_string,baudrate,id):
@@ -20,7 +22,7 @@ def safe_dk_connect(connection_string,baudrate,id):
     print("Connecting to vehicle on: %s" % (connection_string,))
 
     try:
-        vehicle = connect(connection_string, baud=baudrate,
+        vehicle = boid_connect(connection_string, baud=baudrate,
                           heartbeat_timeout=15, wait_ready=True,source_system=id)
 
     # Bad TCP connection
@@ -34,7 +36,7 @@ def safe_dk_connect(connection_string,baudrate,id):
         exit(1)
 
     # API Error
-    except APIException:
+    except dronekit.APIException:
         print ('Timeout!')
         exit(1)
 
@@ -45,7 +47,37 @@ def safe_dk_connect(connection_string,baudrate,id):
 
     return vehicle
 
-class socket_connection:
+def boid_connect(ip,
+            _initialize=True,
+            wait_ready=None,
+            status_printer=dronekit.errprinter,
+            rate=4,
+            baud=115200,
+            heartbeat_timeout=30,
+            source_system=255,
+            use_native=False):
+
+    handler = dronekit.MAVConnection(ip, baud=baud, source_system=source_system, use_native=use_native)
+    boid = boid_def.Boid(handler,source_system)
+
+    if status_printer:
+
+        @boid.on_message('STATUSTEXT')
+        def listener(self, name, m):
+            status_printer(re.sub(r'(^|\n)', '>>> ', m.text.decode('utf-8').rstrip()))
+
+    if _initialize:
+        boid.initialize(rate=rate, heartbeat_timeout=heartbeat_timeout)
+
+    if wait_ready:
+        if wait_ready == True:
+            boid.wait_ready(True)
+        else:
+            boid.wait_ready(*wait_ready)
+
+    return boid
+
+class socket_connection(object):
     def __init__(self, l_port=00):
         multicast_addr = '224.3.29.71'
         self._multicast_group = ('224.3.29.71', l_port)
@@ -70,4 +102,21 @@ class socket_connection:
     def receive_data(self, l_size):
         self._data_rcv = self._sock.recvfrom(l_size)[0]
         return self._data_rcv
-           
+
+class buddy_connection(socket_connection):
+    def __init__(self,port):
+        super(buddy_connection, self).__init__(port)
+
+    def _unpack_incoming(self, l_data_rcv):
+        return struct.unpack('!iifff', l_data_rcv)
+
+    def _pack_outgoing(self, l_data):
+        return struct.pack('!iifff', l_data[0], l_data[1], l_data[2],
+                           l_data[3], l_data[4])
+
+    def send_data(self, l_data):
+        socket_connection.send_data(self, self._pack_outgoing(l_data))
+
+    def receive_data(self):
+        return self._unpack_incoming(socket_connection.receive_data(self, 1024)) 
+

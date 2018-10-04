@@ -29,7 +29,6 @@ else:
 
 boids_number = 3
 
-
 def start_data_flow_out():
     data_flow_out_thread = Thread(target=data_flow_handler_out)
     data_flow_out_thread.daemon = True
@@ -47,18 +46,22 @@ def data_flow_handler_out():
     counter = 0
     while True:
         time.sleep(1/update_rate_hz)
-        data = struct.pack('!iifff', id, counter, vehicle.location.global_relative_frame.lat,
-                           vehicle.location.global_relative_frame.lon, vehicle.location.global_relative_frame.alt)
-        connection_buddy.send_data(data)
+        connection_buddy.send_data((id, counter, vehicle.location.global_relative_frame.lat,
+                           vehicle.location.global_relative_frame.lon, vehicle.location.global_relative_frame.alt))
         counter += 1
 
 
 def data_flow_handler_in():
     global update_rate_hz
+    global follow
     while True:
         time.sleep(1/(update_rate_hz*boids_number))
-        data = connection_buddy.receive_data(1024)
-        print(struct.unpack('!iifff', data))
+        data = connection_buddy.receive_data()
+        vehicle.parse_data(data)
+        if follow is True:
+            vehicle.mode = VehicleMode("GUIDED")
+            vehicle.simple_goto(vehicle._buddy_1_location)
+
 
 
 class ConvertShell(cmd.Cmd):
@@ -70,12 +73,19 @@ class ConvertShell(cmd.Cmd):
         guidance.takeoff(vehicle, parse(arg), args.safety)
         print("Taking off completed")
 
-    def do_send(self, arg):
-        connection_buddy.send_data("kek!")
+    def do_print_buddy_1(self, arg):
+        print(vehicle.get_buddy_1())
 
-    def do_receive(self, arg):
-        data = connection_buddy.receive_data(1024)
-        print(data)
+    def do_print_buddy_2(self, arg):
+        print(vehicle.get_buddy_2())
+
+    def do_follow(self, arg):
+        global follow
+        follow = True
+
+    def do_stop_follow(self, arg):
+        global follow
+        follow = False
 
     def do_start_flow_out(self, arg):
         'Start outgoing data flow'
@@ -103,6 +113,7 @@ def parse(arg):
 
 if __name__ == "__main__":
     vehicle = connection.safe_dk_connect(args.master, args.baud, id)
-    connection_buddy = connection.socket_connection(8000)
+    connection_buddy = connection.buddy_connection(8000)
     update_rate_hz = 1
+    follow = False
     ConvertShell().cmdloop()
