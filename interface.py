@@ -23,33 +23,43 @@ parser.add_argument('--id',
 args = parser.parse_args()
 
 if not args.id:
-    id=255
+    id = 255
 else:
     id = int(args.id)
+
+boids_number = 3
+
 
 def start_data_flow_out():
     data_flow_out_thread = Thread(target=data_flow_handler_out)
     data_flow_out_thread.daemon = True
     data_flow_out_thread.start()
 
+
 def start_data_flow_in():
     data_flow_in_thread = Thread(target=data_flow_handler_in)
     data_flow_in_thread.daemon = True
     data_flow_in_thread.start()
 
+
 def data_flow_handler_out():
     global update_rate_hz
+    counter = 0
     while True:
         time.sleep(1/update_rate_hz)
-        data = struct.pack('!ifff', id, vehicle.location.global_relative_frame.lat, vehicle.location.global_relative_frame.lon, vehicle.location.global_relative_frame.alt)
+        data = struct.pack('!iifff', id, counter, vehicle.location.global_relative_frame.lat,
+                           vehicle.location.global_relative_frame.lon, vehicle.location.global_relative_frame.alt)
         connection_buddy.send_data(data)
+        counter += 1
+
 
 def data_flow_handler_in():
     global update_rate_hz
     while True:
-        time.sleep(1/update_rate_hz)
+        time.sleep(1/(update_rate_hz*boids_number))
         data = connection_buddy.receive_data(1024)
-        print(struct.unpack('!ifff', data))
+        print(struct.unpack('!iifff', data))
+
 
 class ConvertShell(cmd.Cmd):
     intro = 'Welcome to the Converter shell. Type help or ? to list commands.\n'
