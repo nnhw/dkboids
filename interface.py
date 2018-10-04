@@ -54,13 +54,16 @@ def data_flow_handler_out():
 def data_flow_handler_in():
     global update_rate_hz
     global follow
+    global target
     while True:
         time.sleep(1/(update_rate_hz*boids_number))
         data = connection_buddy.receive_data()
-        vehicle.parse_data(data)
+        vehicle.analyze_data(data)
         if follow is True:
-            vehicle.mode = VehicleMode("GUIDED")
-            vehicle.simple_goto(vehicle._buddy_1_location)
+            if vehicle._buddy_1_id == target:
+                vehicle.simple_goto(vehicle._buddy_1_location)
+            elif vehicle._buddy_2_id == target:
+                vehicle.simple_goto(vehicle._buddy_2_location)
 
 
 
@@ -80,8 +83,11 @@ class ConvertShell(cmd.Cmd):
         print(vehicle.get_buddy_2())
 
     def do_follow(self, arg):
+        vehicle.mode = VehicleMode("GUIDED")
         global follow
+        global target
         follow = True
+        target = parse(arg)
 
     def do_stop_follow(self, arg):
         global follow
