@@ -1,6 +1,8 @@
 import dronekit
 import scipy.spatial
-from osgeo import gdal
+# from osgeo import gdal
+import geopy.distance
+import math
 
 class Boid(dronekit.Vehicle):
     def __init__(self, handler, id):
@@ -23,12 +25,20 @@ class Boid(dronekit.Vehicle):
         return distance
 
     def _calculate_distance_fine(self, l_location):
-        return 0
+        me = (self.location.global_relative_frame.lat,self.location.global_relative_frame.lon)
+        target = (l_location[2], l_location[3])
+        # geopy.distance.vincenty(me,target)
+        horizontal_distance =  geopy.distance.geodesic(me,target).m
+        vertical_distance = abs(self.location.global_relative_frame.alt - l_location[4])
+        print(horizontal_distance)
+        distance = math.sqrt(pow(horizontal_distance,2)+pow(vertical_distance,2))
+        print(distance)
+        return distance
 
     def analyze_data(self, l_data):
         if l_data[0] == self._id: 
             return
-        distance = self._calculate_distance_coarse(l_data)
+        distance = self._calculate_distance_fine(l_data)
 
         new_id = l_data[0] != self._buddy_id[0] and l_data[0] != self._buddy_id[1] and l_data[0] != self._buddy_id[2]
 
