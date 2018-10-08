@@ -29,10 +29,12 @@ class Boid(dronekit.Vehicle):
         if l_data[0] == self._id: 
             return
         distance = self._calculate_distance_coarse(l_data)
-        if distance < self._buddy_distance[0] and l_data[0] !=self._buddy_id[0] and l_data[0] !=self._buddy_id[1]:
-            self._buddy_id[0] = l_data[0]
-        elif distance < self._buddy_distance[1] and l_data[0] !=self._buddy_id[0] and l_data[0] !=self._buddy_id[1]:
-            self._buddy_id[1] = l_data[0]
+
+        new_id = l_data[0] != self._buddy_id[0] and l_data[0] != self._buddy_id[1] and l_data[0] != self._buddy_id[2]
+
+        for n in range(len(self._buddy_distance)):
+            if distance < self._buddy_distance[n] and new_id is True :
+                self._buddy_id[n] = l_data[0]
         self.update_buddy_data(l_data,distance)
 
 
@@ -51,6 +53,12 @@ class Boid(dronekit.Vehicle):
             self._buddy_location[1].lon = l_data[3]
             self._buddy_location[1].alt = l_data[4]
             self._buddy_distance[1] = distance
+        elif l_data[0] == self._buddy_id[2]:
+            self._buddy_flight_level[0] = 0
+            self._buddy_location[2].lat = l_data[2]
+            self._buddy_location[2].lon = l_data[3]
+            self._buddy_location[2].alt = l_data[4]
+            self._buddy_distance[2] = distance
 
     def get_buddy(self,n):
         return self._buddy_id[n-1],self._buddy_flight_level[n-1], self._buddy_location[n-1].lat, self._buddy_location[n-1].lon, self._buddy_location[n-1].alt, self._buddy_distance[n-1]

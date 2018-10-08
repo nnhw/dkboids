@@ -27,7 +27,7 @@ if not args.id:
 else:
     id = int(args.id)
 
-boids_number = 3
+boids_number = 4
 
 def start_data_flow_out():
     data_flow_out_thread = Thread(target=data_flow_handler_out)
