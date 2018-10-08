@@ -90,18 +90,6 @@ def download_mission(vehicle):
 
 
 def set_attitude(vehicle, roll_angle=0.0, pitch_angle=0.0, yaw_rate=0.0, thrust=0.5, duration=0):
-    """
-    Note that from AC3.3 the message should be re-sent every second (after about 3 seconds
-    with no message the velocity will drop back to zero). In AC3.2.1 and earlier the specified
-    velocity persists until it is canceled. The code below should work on either version
-    (sending the message multiple times does not cause problems).
-    """
-
-    """
-    The roll and pitch rate cannot be controllbed with rate in radian in AC3.4.4 or earlier,
-    so you must use quaternion to control the pitch and roll for those vehicles.
-    """
-
     # Thrust >  0.5: Ascend
     # Thrust == 0.5: Hold the altitude
     # Thrust <  0.5: Descend

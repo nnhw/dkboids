@@ -3,6 +3,8 @@ import scipy.spatial
 # from osgeo import gdal
 import geopy.distance
 import math
+import guidance
+from geographiclib.geodesic import Geodesic
 
 class Boid(dronekit.Vehicle):
     def __init__(self, handler, id):
@@ -10,19 +12,15 @@ class Boid(dronekit.Vehicle):
         
         self._id = id
         self._flight_level = 0
+        self._poi = dronekit.LocationGlobalRelative(0,0,0)
+
 
         #yes, it is better to have a class (buddy), but it's OK for now
         self._buddy_id = [0,0,0]
         self._buddy_location = [dronekit.LocationGlobalRelative(0,0,0),dronekit.LocationGlobalRelative(0,0,0),dronekit.LocationGlobalRelative(0,0,0)]
         self._buddy_distance = [100,100,100]
         self._buddy_flight_level = [0,0,0]
-
-    def _calculate_distance_coarse(self,l_location):
-        me = (self.location.global_relative_frame.lat,self.location.global_relative_frame.lon,self.location.global_relative_frame.alt)
-        target = (l_location[2], l_location[3], l_location[4])
-        distance = scipy.spatial.distance.euclidean(me,target)
-        # print(distance)
-        return distance
+        self._buddy_poi = [dronekit.LocationGlobalRelative(0,0,0),dronekit.LocationGlobalRelative(0,0,0),dronekit.LocationGlobalRelative(0,0,0)]
 
     def _calculate_distance_fine(self, l_location):
         me = (self.location.global_relative_frame.lat,self.location.global_relative_frame.lon)
@@ -30,15 +28,21 @@ class Boid(dronekit.Vehicle):
         # geopy.distance.vincenty(me,target)
         horizontal_distance =  geopy.distance.geodesic(me,target).m
         vertical_distance = abs(self.location.global_relative_frame.alt - l_location[4])
-        print(horizontal_distance)
+        # print(horizontal_distance)
         distance = math.sqrt(pow(horizontal_distance,2)+pow(vertical_distance,2))
-        print(distance)
-        return distance
+        # print(distance)
+        return distance, horizontal_distance, vertical_distance
+
+    def _calculate_angle(self, l_location):
+        me = (self.location.global_relative_frame.lat,self.location.global_relative_frame.lon)
+        target = (l_location.lat, l_location.lon)
+        result = Geodesic.WGS84.Inverse(target[0], target[1], me[0], me[1])
+        print("angle to 0 is ", result['a12'])
 
     def analyze_data(self, l_data):
         if l_data[0] == self._id: 
             return
-        distance = self._calculate_distance_fine(l_data)
+        distance = self._calculate_distance_fine(l_data)[0]
 
         new_id = l_data[0] != self._buddy_id[0] and l_data[0] != self._buddy_id[1] and l_data[0] != self._buddy_id[2]
 
@@ -73,3 +77,29 @@ class Boid(dronekit.Vehicle):
     def get_buddy(self,n):
         return self._buddy_id[n-1],self._buddy_flight_level[n-1], self._buddy_location[n-1].lat, self._buddy_location[n-1].lon, self._buddy_location[n-1].alt, self._buddy_distance[n-1]
 
+    def separation(self):
+        pass
+
+    def alignment(self):
+        pass
+
+    def cohesion(self):
+        lat_summ = 0
+        lon_summ = 0
+        alt_summ = 0
+        for loc in self._buddy_location:
+            lat_summ+=loc.lat
+            lon_summ+=loc.lon
+            alt_summ+=loc.alt
+        lat_mean = lat_summ/3
+        lon_mean = lon_summ/3
+        alt_mean = alt_summ/3
+        buddies_center = (lat_mean,lon_mean,alt_mean)
+        return buddies_center
+        
+
+    def implement_corrections(self):
+        self.cohesion()
+        # _calculate_angle
+        # roll = k1*self._calculate_distance_fine(l_data)[1]*
+        # guidance.set_attitude(self,roll_angle=roll)
