@@ -60,10 +60,9 @@ def data_flow_handler_in():
         data = connection_buddy.receive_data()
         vehicle.analyze_data(data)
         if follow is True:
-            if vehicle._buddy_1_id == target:
-                vehicle.simple_goto(vehicle._buddy_1_location)
-            elif vehicle._buddy_2_id == target:
-                vehicle.simple_goto(vehicle._buddy_2_location)
+            for n in range(len(vehicle._buddy_id)):
+                if vehicle._buddy_id[n] == target:
+                    vehicle.simple_goto(vehicle._buddy_location[n])
 
 
 
@@ -76,11 +75,8 @@ class ConvertShell(cmd.Cmd):
         guidance.takeoff(vehicle, parse(arg), args.safety)
         print("Taking off completed")
 
-    def do_print_buddy_1(self, arg):
-        print(vehicle.get_buddy_1())
-
-    def do_print_buddy_2(self, arg):
-        print(vehicle.get_buddy_2())
+    def do_print_buddy(self, arg):
+        print(vehicle.get_buddy(parse(arg)))
 
     def do_follow(self, arg):
         vehicle.mode = VehicleMode("GUIDED")
@@ -92,14 +88,6 @@ class ConvertShell(cmd.Cmd):
     def do_stop_follow(self, arg):
         global follow
         follow = False
-
-    def do_start_flow_out(self, arg):
-        'Start outgoing data flow'
-        start_data_flow_out()
-
-    def do_start_flow_in(self, arg):
-        'Start incoming data flow'
-        start_data_flow_in()
 
     def do_bye(self, arg):
         'Exit'
@@ -118,8 +106,10 @@ def parse(arg):
 
 
 if __name__ == "__main__":
-    vehicle = connection.safe_dk_connect(args.master, args.baud, id)
-    connection_buddy = connection.buddy_connection(8000)
     update_rate_hz = 1
     follow = False
+    vehicle = connection.safe_dk_connect(args.master, args.baud, id)
+    connection_buddy = connection.buddy_connection(8000)
+    start_data_flow_out()
+    start_data_flow_in()
     ConvertShell().cmdloop()
