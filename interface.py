@@ -55,15 +55,17 @@ def data_flow_handler_in():
     global update_rate_hz
     global follow
     global target
+    global swarming
     while True:
         time.sleep(1/(update_rate_hz*boids_number))
         data = connection_buddy.receive_data()
         vehicle.analyze_data(data)
-        vehicle.implement_corrections()
         if follow is True:
             for n in range(len(vehicle._buddy_id)):
                 if vehicle._buddy_id[n] == target:
                     vehicle.simple_goto(vehicle._buddy_location[n])
+        if swarming is True:
+            vehicle.implement_corrections()
 
 
 class ConvertShell(cmd.Cmd):
@@ -89,6 +91,14 @@ class ConvertShell(cmd.Cmd):
         global follow
         follow = False
 
+    def do_swarm(self, arg):
+        global swarming
+        swarming = True
+
+    def do_stop_swarm(self, arg):
+        global swarming
+        swarming = False
+
     def do_bye(self, arg):
         'Exit'
         vehicle.close()
@@ -108,6 +118,7 @@ def parse(arg):
 if __name__ == "__main__":
     update_rate_hz = 1
     follow = False
+    swarming = False
     vehicle = connection.safe_dk_connect(args.master, args.baud, id)
     connection_buddy = connection.buddy_connection(8000)
     start_data_flow_out()

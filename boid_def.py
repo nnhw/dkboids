@@ -22,12 +22,12 @@ class Boid(dronekit.Vehicle):
         self._buddy_flight_level = [0,0,0]
         self._buddy_poi = [dronekit.LocationGlobalRelative(0,0,0),dronekit.LocationGlobalRelative(0,0,0),dronekit.LocationGlobalRelative(0,0,0)]
 
-    def _calculate_distance_fine(self, l_location):
+    def _calculate_distance_fine(self, lat, lon, alt):
         me = (self.location.global_relative_frame.lat,self.location.global_relative_frame.lon)
-        target = (l_location[2], l_location[3])
+        target = (lat, lon)
         # geopy.distance.vincenty(me,target)
         horizontal_distance =  geopy.distance.geodesic(me,target).m
-        vertical_distance = abs(self.location.global_relative_frame.alt - l_location[4])
+        vertical_distance = abs(self.location.global_relative_frame.alt - alt)
         # print(horizontal_distance)
         distance = math.sqrt(pow(horizontal_distance,2)+pow(vertical_distance,2))
         # print(distance)
@@ -50,7 +50,7 @@ class Boid(dronekit.Vehicle):
     def analyze_data(self, l_data):
         if l_data[0] == self._id: 
             return
-        distance = self._calculate_distance_fine(l_data)[0]
+        distance = self._calculate_distance_fine(l_data[2],l_data[3],l_data[4])[0]
 
         new_id = l_data[0] != self._buddy_id[0] and l_data[0] != self._buddy_id[1] and l_data[0] != self._buddy_id[2]
 
@@ -102,14 +102,15 @@ class Boid(dronekit.Vehicle):
         lat_mean = lat_summ/3
         lon_mean = lon_summ/3
         alt_mean = alt_summ/3
-        buddies_center = (lat_mean,lon_mean,alt_mean)
-        angle = self._calculate_angle(buddies_center)
-        diff = self.heading - angle
-        roll = -diff * 0.1
-        guidance.set_attitude(self,roll_angle=roll)
-        print ("heading is ", self.heading)
-        print("diff is", diff)
-        print("roll is", roll)
+        buddies_center = dronekit.LocationGlobalRelative(lat_mean,lon_mean,alt_mean)
+        print ('center is', lat_mean,lon_mean,alt_mean)
+        distance = self._calculate_distance_fine(buddies_center.lat,buddies_center.lon,buddies_center.alt)
+        print ('distance is', distance)
+        if distance > 30:
+            self.mode = dronekit.VehicleMode("GUIDED")
+            self.simple_goto(buddies_center)
+
+
         
 
     def implement_corrections(self):
