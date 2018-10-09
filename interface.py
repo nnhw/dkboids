@@ -59,12 +59,11 @@ def data_flow_handler_in():
         time.sleep(1/(update_rate_hz*boids_number))
         data = connection_buddy.receive_data()
         vehicle.analyze_data(data)
-        vehicle._calculate_angle(vehicle._buddy_location[0])
+        vehicle.implement_corrections()
         if follow is True:
             for n in range(len(vehicle._buddy_id)):
                 if vehicle._buddy_id[n] == target:
                     vehicle.simple_goto(vehicle._buddy_location[n])
-
 
 
 class ConvertShell(cmd.Cmd):

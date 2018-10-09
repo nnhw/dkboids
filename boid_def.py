@@ -35,9 +35,17 @@ class Boid(dronekit.Vehicle):
 
     def _calculate_angle(self, l_location):
         me = (self.location.global_relative_frame.lat,self.location.global_relative_frame.lon)
-        target = (l_location.lat, l_location.lon)
-        result = Geodesic.WGS84.Inverse(target[0], target[1], me[0], me[1])
-        print("angle to 0 is ", result['a12'])
+        target = (l_location[0], l_location[1])
+        result = Geodesic.WGS84.Inverse(me[0], me[1], target[0], target[1])
+        azimuth = result['azi1']
+        if azimuth > 0:
+            angle = azimuth
+        elif azimuth < 0:
+            angle = 360 + azimuth
+        print("azi1 is ", azimuth)
+        print("angle is ", angle)
+        return angle
+
 
     def analyze_data(self, l_data):
         if l_data[0] == self._id: 
@@ -95,7 +103,13 @@ class Boid(dronekit.Vehicle):
         lon_mean = lon_summ/3
         alt_mean = alt_summ/3
         buddies_center = (lat_mean,lon_mean,alt_mean)
-        return buddies_center
+        angle = self._calculate_angle(buddies_center)
+        diff = self.heading - angle
+        roll = -diff * 0.1
+        guidance.set_attitude(self,roll_angle=roll)
+        print ("heading is ", self.heading)
+        print("diff is", diff)
+        print("roll is", roll)
         
 
     def implement_corrections(self):
