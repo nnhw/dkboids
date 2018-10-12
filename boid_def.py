@@ -14,11 +14,13 @@ class Boid(dronekit.Vehicle):
         self._flight_level = 0
         self._poi = dronekit.LocationGlobalRelative(0,0,0)
 
+        self._global_poi = dronekit.LocationGlobalRelative(0,0,0)
 
         #yes, it is better to have a class (buddy), but it's OK for now
         self._buddy_id = [0,0,0]
         self._buddy_location = [dronekit.LocationGlobalRelative(0,0,0),dronekit.LocationGlobalRelative(0,0,0),dronekit.LocationGlobalRelative(0,0,0)]
-        self._buddy_distance = [100,100,100]
+        self._buddy_distance = [100000,100000,100000]
+
         self._buddy_flight_level = [0,0,0]
         self._buddy_poi = [dronekit.LocationGlobalRelative(0,0,0),dronekit.LocationGlobalRelative(0,0,0),dronekit.LocationGlobalRelative(0,0,0)]
 
@@ -48,12 +50,16 @@ class Boid(dronekit.Vehicle):
 
 
     def analyze_data(self, l_data):
+        if l_data[0] == 200:
+            self._global_poi = dronekit.LocationGlobalRelative(l_data[3],l_data[4],l_data[5])
+            self.mode = dronekit.VehicleMode("GUIDED")
+            print("new poi set")
+
         if l_data[0] == self._id: 
             return
-        distance = self._calculate_distance_fine(l_data[2],l_data[3],l_data[4])[0]
 
+        distance = self._calculate_distance_fine(l_data[3],l_data[4],l_data[5])[0]
         new_id = l_data[0] != self._buddy_id[0] and l_data[0] != self._buddy_id[1] and l_data[0] != self._buddy_id[2]
-
         for n in range(len(self._buddy_distance)):
             if distance < self._buddy_distance[n] and new_id is True :
                 self._buddy_id[n] = l_data[0]
@@ -64,22 +70,22 @@ class Boid(dronekit.Vehicle):
         if l_data[0] == self._id:
             return
         elif l_data[0] == self._buddy_id[0]:
-            self._buddy_flight_level[0] = 0
-            self._buddy_location[0].lat = l_data[2]
-            self._buddy_location[0].lon = l_data[3]
-            self._buddy_location[0].alt = l_data[4]
+            self._buddy_flight_level[0] = l_data[2]
+            self._buddy_location[0].lat = l_data[3]
+            self._buddy_location[0].lon = l_data[4]
+            self._buddy_location[0].alt = l_data[5]
             self._buddy_distance[0] = distance
         elif l_data[0] == self._buddy_id[1]:
-            self._buddy_flight_level[0] = 0
-            self._buddy_location[1].lat = l_data[2]
-            self._buddy_location[1].lon = l_data[3]
-            self._buddy_location[1].alt = l_data[4]
+            self._buddy_flight_level[1] = l_data[2]
+            self._buddy_location[1].lat = l_data[3]
+            self._buddy_location[1].lon = l_data[4]
+            self._buddy_location[1].alt = l_data[5]
             self._buddy_distance[1] = distance
         elif l_data[0] == self._buddy_id[2]:
-            self._buddy_flight_level[0] = 0
-            self._buddy_location[2].lat = l_data[2]
-            self._buddy_location[2].lon = l_data[3]
-            self._buddy_location[2].alt = l_data[4]
+            self._buddy_flight_level[2] = l_data[2]
+            self._buddy_location[2].lat = l_data[3]
+            self._buddy_location[2].lon = l_data[4]
+            self._buddy_location[2].alt = l_data[5]
             self._buddy_distance[2] = distance
 
     def get_buddy(self,n):
@@ -103,18 +109,26 @@ class Boid(dronekit.Vehicle):
         lon_mean = lon_summ/3
         alt_mean = alt_summ/3
         buddies_center = dronekit.LocationGlobalRelative(lat_mean,lon_mean,alt_mean)
-        print ('center is', lat_mean,lon_mean,alt_mean)
+        # print ('center is', lat_mean,lon_mean,alt_mean)
         distance = self._calculate_distance_fine(buddies_center.lat,buddies_center.lon,buddies_center.alt)
-        print ('distance is', distance)
-        if distance > 30:
-            self.mode = dronekit.VehicleMode("GUIDED")
-            self.simple_goto(buddies_center)
-
-
+        # print ('distance is', distance)
+        return buddies_center, distance
         
-
     def implement_corrections(self):
-        self.cohesion()
-        # _calculate_angle
-        # roll = k1*self._calculate_distance_fine(l_data)[1]*
-        # guidance.set_attitude(self,roll_angle=roll)
+        cohesion_point = self.cohesion()[0]
+        cohesion_distance = self.cohesion()[1]
+
+        correction_poi = cohesion_point
+
+        if correction_poi.lat == 0:
+            self._poi = self._global_poi
+        else:
+            self._poi.lat = (self._global_poi.lat + correction_poi.lat)/2
+            self._poi.lon = (self._global_poi.lon + correction_poi.lon)/2
+            self._poi.alt = self._flight_level
+
+    def goto_poi(self):
+        self.simple_goto(self._poi)
+        # print("Going to ", self._poi.lat)
+        # print("Going to ", self._poi.lon)
+        # print("Going to ", self._poi.alt)

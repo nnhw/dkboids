@@ -46,7 +46,7 @@ def data_flow_handler_out():
     counter = 0
     while True:
         time.sleep(1/update_rate_hz)
-        connection_buddy.send_data((id, counter, vehicle.location.global_relative_frame.lat,
+        connection_buddy.send_data((vehicle._id, counter, vehicle._flight_level, vehicle.location.global_relative_frame.lat,
                            vehicle.location.global_relative_frame.lon, vehicle.location.global_relative_frame.alt))
         counter += 1
 
@@ -60,12 +60,14 @@ def data_flow_handler_in():
         time.sleep(1/(update_rate_hz*boids_number))
         data = connection_buddy.receive_data()
         vehicle.analyze_data(data)
-        if follow is True:
-            for n in range(len(vehicle._buddy_id)):
-                if vehicle._buddy_id[n] == target:
-                    vehicle.simple_goto(vehicle._buddy_location[n])
-        if swarming is True:
-            vehicle.implement_corrections()
+        vehicle.implement_corrections()
+        vehicle.goto_poi()
+        # if follow is True:
+        #     for n in range(len(vehicle._buddy_id)):
+        #         if vehicle._buddy_id[n] == target:
+        #             vehicle.simple_goto(vehicle._buddy_location[n])
+        # if swarming is True:
+        #     vehicle.implement_corrections()
 
 
 class ConvertShell(cmd.Cmd):
@@ -74,18 +76,20 @@ class ConvertShell(cmd.Cmd):
 
     def do_takeoff(self, arg):
         'takeoff <altitude>; load a program, takeoff and reach target altitude'
-        guidance.takeoff(vehicle, parse(arg), args.safety)
+        flight_level = int((parse(arg))[0])
+        vehicle._flight_level = flight_level
+        guidance.takeoff(vehicle, flight_level, args.safety)
         print("Taking off completed")
 
     def do_print_buddy(self, arg):
-        print(vehicle.get_buddy(parse(arg)))
+        print(vehicle.get_buddy(int(parse(arg)[0])))
 
     def do_follow(self, arg):
         vehicle.mode = VehicleMode("GUIDED")
         global follow
         global target
         follow = True
-        target = parse(arg)
+        target = int(parse(arg))
 
     def do_stop_follow(self, arg):
         global follow
@@ -99,6 +103,9 @@ class ConvertShell(cmd.Cmd):
         global swarming
         swarming = False
 
+    def do_set_global_poi(self, arg):
+        connection_buddy.send_data((200, 0, 0, float((parse(arg))[0]),float((parse(arg))[1]),float((parse(arg))[2])))
+
     def do_bye(self, arg):
         'Exit'
         vehicle.close()
@@ -108,11 +115,10 @@ class ConvertShell(cmd.Cmd):
 
 def parse(arg):
     'Convert a series of zero or more numbers to an argument tuple'
-    # return tuple(map(int, arg.split()))
     if not arg:
         return 0
     else:
-        return int(arg)
+        return tuple(arg.split())
 
 
 if __name__ == "__main__":
