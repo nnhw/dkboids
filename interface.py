@@ -63,7 +63,7 @@ def data_flow_handler_in():
         if follow is True:
             for n in range(len(vehicle._buddy_id)):
                 if vehicle._buddy_id[n] == target:
-                    vehicle.simple_goto(vehicle._buddy_location[n])
+                    vehicle.simple_goto(LocationGlobalRelative(vehicle._buddy_location[n].lat, vehicle._buddy_location[n].lon, vehicle._flight_level))
         if swarming is True:
             vehicle.implement_corrections()
             vehicle.goto_poi()
