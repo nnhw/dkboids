@@ -19,6 +19,17 @@ def takeoff(vehicle, target_altitude, safety):
         print('Setting default altitude 50m')
         target_altitude = 50
 
+    my_location_alt = vehicle.location.global_frame
+    my_location_alt.alt = my_location_alt.alt + target_altitude
+    vehicle.home_location = my_location_alt
+
+    print("New home location altitude is set to ", vehicle.home_location.alt)
+
+    print(" Write vehicle param 'ALT_HOLD_RTL' : ", target_altitude*100)
+    vehicle.parameters['ALT_HOLD_RTL']=target_altitude*100
+
+
+
     if safety is True:
         if vehicle.groundspeed < 0.3:
             print("Arming and taking-off!")
@@ -47,6 +58,7 @@ def arm_and_takeoff(vehicle, aTargetAltitude, safety):
                      mavutil.mavlink.MAV_CMD_NAV_TAKEOFF, 0, 0, 0, 0, 0, 0, 0, 0, aTargetAltitude))
     print(" Upload new commands to vehicle")
     cmds.upload()
+    time.sleep(3)
 
     if safety is True:
         print("Basic pre-arm checks")
@@ -58,15 +70,18 @@ def arm_and_takeoff(vehicle, aTargetAltitude, safety):
     print("Arming motors")
     # Plane should arm first
     vehicle.armed = True
+    time.sleep(3)
 
     # Confirm vehicle armed before attempting to take off
     while not vehicle.armed:
-        print(" Waiting for arming...")
+        print(" Trying to arm again...")
+        vehicle.armed = True
         time.sleep(1)
 
     # Setting mode to AUTO
     vehicle.mode = VehicleMode("AUTO")
     print("Taking off!")
+    time.sleep(3)
 
     # Wait until the vehicle reaches a safe height before processing the goto
     #  (otherwise the command after Vehicle.simple_takeoff will execute

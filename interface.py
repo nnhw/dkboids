@@ -89,7 +89,7 @@ class ConvertShell(cmd.Cmd):
         global follow
         global target
         follow = True
-        target = int(parse(arg))
+        target = int(parse(arg)[0])
 
     def do_stop_follow(self, arg):
         global follow
@@ -124,7 +124,7 @@ def parse(arg):
 if __name__ == "__main__":
     update_rate_hz = 1
     follow = False
-    swarming = True
+    swarming = False
     vehicle = connection.safe_dk_connect(args.master, args.baud, id)
     connection_buddy = connection.buddy_connection(8000)
     start_data_flow_out()
