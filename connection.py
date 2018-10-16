@@ -108,11 +108,11 @@ class buddy_connection(socket_connection):
         super(buddy_connection, self).__init__(port)
 
     def _unpack_incoming(self, l_data_rcv):
-        return struct.unpack('!iiifff', l_data_rcv)
+        return struct.unpack('!iiiffff', l_data_rcv)
 
     def _pack_outgoing(self, l_data):
-        return struct.pack('!iiifff', l_data[0], l_data[1], l_data[2],
-                           l_data[3], l_data[4], l_data[5])
+        return struct.pack('!iiiffff', l_data[0], l_data[1], l_data[2],
+                           l_data[3], l_data[4], l_data[5], l_data[6])
 
     def send_data(self, l_data):
         socket_connection.send_data(self, self._pack_outgoing(l_data))

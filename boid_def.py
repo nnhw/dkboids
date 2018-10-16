@@ -13,6 +13,7 @@ class Boid(dronekit.Vehicle):
         self._id = id
         self._flight_level = 0
         self._poi = dronekit.LocationGlobalRelative(0,0,0)
+        self._groundspeed = 0
 
         self._global_poi = dronekit.LocationGlobalRelative(0,0,0)
 
@@ -20,6 +21,7 @@ class Boid(dronekit.Vehicle):
         self._buddy_id = [0,0,0]
         self._buddy_location = [dronekit.LocationGlobalRelative(0,0,0),dronekit.LocationGlobalRelative(0,0,0),dronekit.LocationGlobalRelative(0,0,0)]
         self._buddy_distance = [100000,100000,100000]
+        self._buddy_groundspeed = [0,0,0]
 
         self._buddy_flight_level = [0,0,0]
         self._buddy_poi = [dronekit.LocationGlobalRelative(0,0,0),dronekit.LocationGlobalRelative(0,0,0),dronekit.LocationGlobalRelative(0,0,0)]
@@ -54,6 +56,7 @@ class Boid(dronekit.Vehicle):
             self._global_poi = dronekit.LocationGlobalRelative(l_data[3],l_data[4],l_data[5])
             self.mode = dronekit.VehicleMode("GUIDED")
             print("new poi set")
+            return
 
         if l_data[0] == self._id: 
             return
@@ -74,28 +77,35 @@ class Boid(dronekit.Vehicle):
             self._buddy_location[0].lat = l_data[3]
             self._buddy_location[0].lon = l_data[4]
             self._buddy_location[0].alt = l_data[5]
+            self._buddy_groundspeed[0] = l_data[6]
             self._buddy_distance[0] = distance
         elif l_data[0] == self._buddy_id[1]:
             self._buddy_flight_level[1] = l_data[2]
             self._buddy_location[1].lat = l_data[3]
             self._buddy_location[1].lon = l_data[4]
             self._buddy_location[1].alt = l_data[5]
+            self._buddy_groundspeed[1] = l_data[6]
             self._buddy_distance[1] = distance
         elif l_data[0] == self._buddy_id[2]:
             self._buddy_flight_level[2] = l_data[2]
             self._buddy_location[2].lat = l_data[3]
             self._buddy_location[2].lon = l_data[4]
             self._buddy_location[2].alt = l_data[5]
+            self._buddy_groundspeed[2] = l_data[6]
             self._buddy_distance[2] = distance
 
     def get_buddy(self,n):
-        return self._buddy_id[n-1],self._buddy_flight_level[n-1], self._buddy_location[n-1].lat, self._buddy_location[n-1].lon, self._buddy_location[n-1].alt, self._buddy_distance[n-1]
+        return self._buddy_id[n-1],self._buddy_flight_level[n-1], self._buddy_location[n-1].lat, self._buddy_location[n-1].lon, self._buddy_location[n-1].alt, self._buddy_distance[n-1], self._buddy_groundspeed[n-1]
 
     def separation(self):
         pass
 
     def alignment(self):
-        pass
+        buddies_average_groundspeed = 0
+        for speed in self._buddy_groundspeed:
+            buddies_average_groundspeed+=speed
+        buddies_average_groundspeed = buddies_average_groundspeed/3
+        return buddies_average_groundspeed
 
     def cohesion(self):
         lat_summ = 0
@@ -126,6 +136,10 @@ class Boid(dronekit.Vehicle):
             self._poi.lat = (self._global_poi.lat + correction_poi.lat)/2
             self._poi.lon = (self._global_poi.lon + correction_poi.lon)/2
             self._poi.alt = self._flight_level
+
+        alignment_speed = self.alignment()
+        if alignment_speed != 0:
+            self.groundspeed = alignment_speed
 
     def goto_poi(self):
         self.simple_goto(self._poi)

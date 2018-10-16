@@ -47,7 +47,7 @@ def data_flow_handler_out():
     while True:
         time.sleep(1/update_rate_hz)
         connection_buddy.send_data((vehicle._id, counter, vehicle._flight_level, vehicle.location.global_relative_frame.lat,
-                           vehicle.location.global_relative_frame.lon, vehicle.location.global_relative_frame.alt))
+                           vehicle.location.global_relative_frame.lon, vehicle.location.global_relative_frame.alt, vehicle.groundspeed))
         counter += 1
 
 
@@ -60,14 +60,14 @@ def data_flow_handler_in():
         time.sleep(1/(update_rate_hz*boids_number))
         data = connection_buddy.receive_data()
         vehicle.analyze_data(data)
-        vehicle.implement_corrections()
-        vehicle.goto_poi()
-        # if follow is True:
-        #     for n in range(len(vehicle._buddy_id)):
-        #         if vehicle._buddy_id[n] == target:
-        #             vehicle.simple_goto(vehicle._buddy_location[n])
-        # if swarming is True:
-        #     vehicle.implement_corrections()
+        if follow is True:
+            for n in range(len(vehicle._buddy_id)):
+                if vehicle._buddy_id[n] == target:
+                    vehicle.simple_goto(vehicle._buddy_location[n])
+        if swarming is True:
+            vehicle.implement_corrections()
+            vehicle.goto_poi()
+        
 
 
 class ConvertShell(cmd.Cmd):
@@ -104,7 +104,7 @@ class ConvertShell(cmd.Cmd):
         swarming = False
 
     def do_set_global_poi(self, arg):
-        connection_buddy.send_data((200, 0, 0, float((parse(arg))[0]),float((parse(arg))[1]),float((parse(arg))[2])))
+        connection_buddy.send_data((200, 0, 0, float((parse(arg))[0]),float((parse(arg))[1]),float((parse(arg))[2]),0))
 
     def do_bye(self, arg):
         'Exit'
@@ -124,7 +124,7 @@ def parse(arg):
 if __name__ == "__main__":
     update_rate_hz = 1
     follow = False
-    swarming = False
+    swarming = True
     vehicle = connection.safe_dk_connect(args.master, args.baud, id)
     connection_buddy = connection.buddy_connection(8000)
     start_data_flow_out()
