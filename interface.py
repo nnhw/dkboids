@@ -54,7 +54,7 @@ def start_data_flow_in():
 def parse(arg):
     'Convert a series of zero or more numbers to an argument tuple'
     if not arg:
-        return 0
+        return (0,)
     else:
         return tuple(arg.split())
 

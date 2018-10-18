@@ -1,2 +1,0 @@
-class buddy(object):
-    NotImplemented

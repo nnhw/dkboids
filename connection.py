@@ -5,7 +5,7 @@ import time
 import struct
 import socket
 import exceptions
-import boid_def
+import boid_cl
 import re
 from sys import exit
 
@@ -83,7 +83,7 @@ def boid_connect(ip,
 
     handler = dronekit.MAVConnection(
         ip, baud=baud, source_system=source_system, use_native=use_native)
-    boid = boid_def.Boid(handler, source_system)
+    boid = boid_cl.Boid(handler, source_system)
 
     if status_printer:
 

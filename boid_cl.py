@@ -2,6 +2,7 @@ import dronekit
 import geopy.distance
 import math
 import guidance
+import buddy_cl
 
 
 class Boid(dronekit.Vehicle):
@@ -17,16 +18,7 @@ class Boid(dronekit.Vehicle):
 
         self._follow_target_id = 0
 
-        # yes, it is better to have a class (buddy), but it's OK for now
-        self._buddy_id = [0, 0, 0]
-        self._buddy_location = [dronekit.LocationGlobalRelative(
-            0, 0, 0), dronekit.LocationGlobalRelative(0, 0, 0), dronekit.LocationGlobalRelative(0, 0, 0)]
-        self._buddy_distance = [100000, 100000, 100000]
-        self._buddy_groundspeed = [0, 0, 0]
-
-        self._buddy_flight_level = [0, 0, 0]
-        self._buddy_poi = [dronekit.LocationGlobalRelative(0, 0, 0), dronekit.LocationGlobalRelative(
-            0, 0, 0), dronekit.LocationGlobalRelative(0, 0, 0)]
+        self._buddies = (buddy_cl.Buddy(), buddy_cl.Buddy(), buddy_cl.Buddy())
 
     def _calculate_distance_fine(self, lat, lon, alt):
         me = (self.location.global_relative_frame.lat,
@@ -56,47 +48,47 @@ class Boid(dronekit.Vehicle):
 
         distance = self._calculate_distance_fine(
             l_data[3], l_data[4], l_data[5])[0]
-        new_id = l_data[0] != self._buddy_id[0] and l_data[0] != self._buddy_id[1] and l_data[0] != self._buddy_id[2]
-        for n in range(len(self._buddy_distance)):
-            if distance < self._buddy_distance[n] and new_id is True:
-                self._buddy_id[n] = l_data[0]
+        new_id = l_data[0] != self._buddies[0].id and l_data[0] != self._buddies[1].id and l_data[0] != self._buddies[2].id
+        for n in range(len(self._buddies)):
+            if distance < self._buddies[n].distance and new_id is True:
+                self._buddies[n].id = l_data[0]
         self.update_buddy_data(l_data, distance)
 
     def update_buddy_data(self, l_data, distance):
         if l_data[0] == self._id:
             return
-        elif l_data[0] == self._buddy_id[0]:
-            self._buddy_flight_level[0] = l_data[2]
-            self._buddy_location[0].lat = l_data[3]
-            self._buddy_location[0].lon = l_data[4]
-            self._buddy_location[0].alt = l_data[5]
-            self._buddy_groundspeed[0] = l_data[6]
-            self._buddy_distance[0] = distance
-        elif l_data[0] == self._buddy_id[1]:
-            self._buddy_flight_level[1] = l_data[2]
-            self._buddy_location[1].lat = l_data[3]
-            self._buddy_location[1].lon = l_data[4]
-            self._buddy_location[1].alt = l_data[5]
-            self._buddy_groundspeed[1] = l_data[6]
-            self._buddy_distance[1] = distance
-        elif l_data[0] == self._buddy_id[2]:
-            self._buddy_flight_level[2] = l_data[2]
-            self._buddy_location[2].lat = l_data[3]
-            self._buddy_location[2].lon = l_data[4]
-            self._buddy_location[2].alt = l_data[5]
-            self._buddy_groundspeed[2] = l_data[6]
-            self._buddy_distance[2] = distance
+        elif l_data[0] == self._buddies[0].id:
+            self._buddies[0].flight_level = l_data[2]
+            self._buddies[0].location.lat = l_data[3]
+            self._buddies[0].location.lon = l_data[4]
+            self._buddies[0].location.alt = l_data[5]
+            self._buddies[0].groundspeed = l_data[6]
+            self._buddies[0].distance = distance
+        elif l_data[0] == self._buddies[1].id:
+            self._buddies[1].flight_level = l_data[2]
+            self._buddies[1].location.lat = l_data[3]
+            self._buddies[1].location.lon = l_data[4]
+            self._buddies[1].location.alt = l_data[5]
+            self._buddies[1].groundspeed = l_data[6]
+            self._buddies[1].distance = distance
+        elif l_data[0] == self._buddies[2].id:
+            self._buddies[2].flight_level = l_data[2]
+            self._buddies[2].location.lat = l_data[3]
+            self._buddies[2].location.lon = l_data[4]
+            self._buddies[2].location.alt = l_data[5]
+            self._buddies[2].groundspeed = l_data[6]
+            self._buddies[2].distance = distance
 
     def get_buddy(self, n):
-        return self._buddy_id[n-1], self._buddy_flight_level[n-1], self._buddy_location[n-1].lat, self._buddy_location[n-1].lon, self._buddy_location[n-1].alt, self._buddy_distance[n-1], self._buddy_groundspeed[n-1]
+        return self._buddies[n-1].id, self._buddies[n-1].flight_level, self._buddies[n-1].location.lat, self._buddies[n-1].location.lon, self._buddies[n-1].location.alt, self._buddies[n-1].distance, self._buddies[n-1].groundspeed
 
     def separation(self):
         NotImplemented
 
     def alignment(self):
         buddies_average_groundspeed = 0
-        for speed in self._buddy_groundspeed:
-            buddies_average_groundspeed += speed
+        for bd in self._buddies:
+            buddies_average_groundspeed += bd.groundspeed
         buddies_average_groundspeed = buddies_average_groundspeed/3
         return buddies_average_groundspeed
 
@@ -104,10 +96,10 @@ class Boid(dronekit.Vehicle):
         lat_summ = 0
         lon_summ = 0
         alt_summ = 0
-        for loc in self._buddy_location:
-            lat_summ += loc.lat
-            lon_summ += loc.lon
-            alt_summ += loc.alt
+        for bd in self._buddies:
+            lat_summ += bd.location.lat
+            lon_summ += bd.location.lon
+            alt_summ += bd.location.alt
         lat_mean = lat_summ/3
         lon_mean = lon_summ/3
         alt_mean = alt_summ/3
