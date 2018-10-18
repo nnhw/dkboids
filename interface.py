@@ -27,7 +27,7 @@ if not args.id:
 else:
     id = int(args.id)
 
-boids_number = 4
+boids_number = 10
 
 
 def start_data_flow_out():
