@@ -9,6 +9,8 @@ import boid_def
 import re
 from sys import exit
 
+# threading callback functions
+
 
 def data_flow_handler_out(vehicle, rate, connection):
     counter = 0
@@ -102,6 +104,7 @@ def boid_connect(ip,
     return boid
 
 
+# interdkboids connections
 class socket_connection(object):
     def __init__(self, l_port=00):
         multicast_addr = '224.3.29.71'

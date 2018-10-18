@@ -2,7 +2,6 @@ import dronekit
 import geopy.distance
 import math
 import guidance
-from geographiclib.geodesic import Geodesic
 
 
 class Boid(dronekit.Vehicle):
@@ -38,20 +37,6 @@ class Boid(dronekit.Vehicle):
         distance = math.sqrt(pow(horizontal_distance, 2) +
                              pow(vertical_distance, 2))
         return distance, horizontal_distance, vertical_distance
-
-    def _calculate_angle(self, l_location):
-        me = (self.location.global_relative_frame.lat,
-              self.location.global_relative_frame.lon)
-        target = (l_location[0], l_location[1])
-        result = Geodesic.WGS84.Inverse(me[0], me[1], target[0], target[1])
-        azimuth = result['azi1']
-        if azimuth > 0:
-            angle = azimuth
-        elif azimuth < 0:
-            angle = 360 + azimuth
-        print("azi1 is ", azimuth)
-        print("angle is ", angle)
-        return angle
 
     def analyze_data(self, l_data):
         if l_data[0] == self._id:
