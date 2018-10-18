@@ -60,10 +60,8 @@ def data_flow_handler_in():
         time.sleep(1/(update_rate_hz*boids_number))
         data = connection_buddy.receive_data()
         vehicle.analyze_data(data)
-        if follow is True:
-            for n in range(len(vehicle._buddy_id)):
-                if vehicle._buddy_id[n] == target:
-                    vehicle.simple_goto(LocationGlobalRelative(vehicle._buddy_location[n].lat, vehicle._buddy_location[n].lon, vehicle._flight_level))
+        # if follow is True:
+        #     vehicle._global_poi = 
         if swarming is True:
             vehicle.implement_corrections()
             vehicle.goto_poi()
@@ -89,11 +87,12 @@ class ConvertShell(cmd.Cmd):
         global follow
         global target
         follow = True
-        target = int(parse(arg)[0])
+        vehicle._follow_target_id = int(parse(arg)[0])
 
     def do_stop_follow(self, arg):
         global follow
         follow = False
+        vehicle._follow_target_id = 0
 
     def do_swarm(self, arg):
         global swarming

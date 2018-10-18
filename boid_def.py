@@ -16,6 +16,8 @@ class Boid(dronekit.Vehicle):
         self._groundspeed = 0
 
         self._global_poi = dronekit.LocationGlobalRelative(0,0,0)
+        
+        self._follow_target_id = 0
 
         #yes, it is better to have a class (buddy), but it's OK for now
         self._buddy_id = [0,0,0]
@@ -52,14 +54,18 @@ class Boid(dronekit.Vehicle):
 
 
     def analyze_data(self, l_data):
+        if l_data[0] == self._id: 
+            return
+
         if l_data[0] == 200:
             self._global_poi = dronekit.LocationGlobalRelative(l_data[3],l_data[4],l_data[5])
             self.mode = dronekit.VehicleMode("GUIDED")
             print("new poi set")
             return
 
-        if l_data[0] == self._id: 
-            return
+        if self._follow_target_id != 0:
+            if l_data[0] == self._follow_target_id:
+                self._global_poi = dronekit.LocationGlobalRelative(l_data[3],l_data[4],l_data[5])
 
         distance = self._calculate_distance_fine(l_data[3],l_data[4],l_data[5])[0]
         new_id = l_data[0] != self._buddy_id[0] and l_data[0] != self._buddy_id[1] and l_data[0] != self._buddy_id[2]
