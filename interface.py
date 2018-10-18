@@ -29,6 +29,7 @@ else:
 
 boids_number = 4
 
+
 def start_data_flow_out():
     data_flow_out_thread = Thread(target=data_flow_handler_out)
     data_flow_out_thread.daemon = True
@@ -47,7 +48,7 @@ def data_flow_handler_out():
     while True:
         time.sleep(1/update_rate_hz)
         connection_buddy.send_data((vehicle._id, counter, vehicle._flight_level, vehicle.location.global_relative_frame.lat,
-                           vehicle.location.global_relative_frame.lon, vehicle.location.global_relative_frame.alt, vehicle.groundspeed))
+                                    vehicle.location.global_relative_frame.lon, vehicle.location.global_relative_frame.alt, vehicle.groundspeed))
         counter += 1
 
 
@@ -61,11 +62,10 @@ def data_flow_handler_in():
         data = connection_buddy.receive_data()
         vehicle.analyze_data(data)
         # if follow is True:
-        #     vehicle._global_poi = 
+        #     vehicle._global_poi =
         if swarming is True:
             vehicle.implement_corrections()
             vehicle.goto_poi()
-        
 
 
 class ConvertShell(cmd.Cmd):
@@ -103,7 +103,8 @@ class ConvertShell(cmd.Cmd):
         swarming = False
 
     def do_set_global_poi(self, arg):
-        connection_buddy.send_data((200, 0, 0, float((parse(arg))[0]),float((parse(arg))[1]),float((parse(arg))[2]),0))
+        connection_buddy.send_data((200, 0, 0, float((parse(arg))[0]), float(
+            (parse(arg))[1]), float((parse(arg))[2]), 0))
 
     def do_bye(self, arg):
         'Exit'

@@ -6,6 +6,7 @@ import time
 import math
 import connection
 
+
 def takeoff(vehicle, target_altitude, safety):
     if not safety:
         safety = True
@@ -26,9 +27,7 @@ def takeoff(vehicle, target_altitude, safety):
     print("New home location altitude is set to ", vehicle.home_location.alt)
 
     print(" Write vehicle param 'ALT_HOLD_RTL' : ", target_altitude*100)
-    vehicle.parameters['ALT_HOLD_RTL']=target_altitude*100
-
-
+    vehicle.parameters['ALT_HOLD_RTL'] = target_altitude*100
 
     if safety is True:
         if vehicle.groundspeed < 0.3:
@@ -41,6 +40,7 @@ def takeoff(vehicle, target_altitude, safety):
     else:
         print("Ignoring everything, trying to take off")
         arm_and_takeoff(vehicle, target_altitude, safety)
+
 
 def arm_and_takeoff(vehicle, aTargetAltitude, safety):
     """
