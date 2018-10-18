@@ -95,7 +95,6 @@ class socket_connection(object):
         mreq = struct.pack('4sL', group, socket.INADDR_ANY)
         self._sock.setsockopt(
             socket.IPPROTO_IP, socket.IP_ADD_MEMBERSHIP, mreq)
-        # self._sock.settimeout(0.2)
         self._sock.bind(('', self._port))
 
         self._data_rcv = b''

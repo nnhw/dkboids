@@ -1,13 +1,13 @@
 from __future__ import print_function
-from dronekit import VehicleMode, LocationGlobalRelative, LocationGlobal, Command
+from dronekit import VehicleMode
 import argparse
-import connection
-import guidance
 import cmd
 import time
 from threading import Thread
-import sys
-import struct
+
+import connection
+import guidance
+
 
 parser = argparse.ArgumentParser(
     description='DroneKit experiments.')
@@ -43,26 +43,22 @@ def start_data_flow_in():
 
 
 def data_flow_handler_out():
-    global update_rate_hz
+    global base_update_rate_hz
     counter = 0
     while True:
-        time.sleep(1/update_rate_hz)
+        time.sleep(1/base_update_rate_hz)
         connection_buddy.send_data((vehicle._id, counter, vehicle._flight_level, vehicle.location.global_relative_frame.lat,
                                     vehicle.location.global_relative_frame.lon, vehicle.location.global_relative_frame.alt, vehicle.groundspeed))
         counter += 1
 
 
 def data_flow_handler_in():
-    global update_rate_hz
-    global follow
-    global target
+    global base_update_rate_hz
     global swarming
     while True:
-        time.sleep(1/(update_rate_hz*boids_number))
+        time.sleep(1/(base_update_rate_hz*boids_number))
         data = connection_buddy.receive_data()
         vehicle.analyze_data(data)
-        # if follow is True:
-        #     vehicle._global_poi =
         if swarming is True:
             vehicle.implement_corrections()
             vehicle.goto_poi()
@@ -80,29 +76,30 @@ class ConvertShell(cmd.Cmd):
         print("Taking off completed")
 
     def do_print_buddy(self, arg):
+        'get buddy info'
         print(vehicle.get_buddy(int(parse(arg)[0])))
 
     def do_follow(self, arg):
+        'follow target'
         vehicle.mode = VehicleMode("GUIDED")
-        global follow
-        global target
-        follow = True
         vehicle._follow_target_id = int(parse(arg)[0])
 
     def do_stop_follow(self, arg):
-        global follow
-        follow = False
+        'stop following'
         vehicle._follow_target_id = 0
 
     def do_swarm(self, arg):
+        'enable swarming behavior'
         global swarming
         swarming = True
 
     def do_stop_swarm(self, arg):
+        'disable swarming behavior'
         global swarming
         swarming = False
 
     def do_set_global_poi(self, arg):
+        'set global point of interest'
         connection_buddy.send_data((200, 0, 0, float((parse(arg))[0]), float(
             (parse(arg))[1]), float((parse(arg))[2]), 0))
 
@@ -122,8 +119,7 @@ def parse(arg):
 
 
 if __name__ == "__main__":
-    update_rate_hz = 1
-    follow = False
+    base_update_rate_hz = 1
     swarming = False
     vehicle = connection.safe_dk_connect(args.master, args.baud, id)
     connection_buddy = connection.buddy_connection(8000)

@@ -1,6 +1,4 @@
 import dronekit
-import scipy.spatial
-# from osgeo import gdal
 import geopy.distance
 import math
 import guidance
@@ -35,13 +33,10 @@ class Boid(dronekit.Vehicle):
         me = (self.location.global_relative_frame.lat,
               self.location.global_relative_frame.lon)
         target = (lat, lon)
-        # geopy.distance.vincenty(me,target)
         horizontal_distance = geopy.distance.geodesic(me, target).m
         vertical_distance = abs(self.location.global_relative_frame.alt - alt)
-        # print(horizontal_distance)
         distance = math.sqrt(pow(horizontal_distance, 2) +
                              pow(vertical_distance, 2))
-        # print(distance)
         return distance, horizontal_distance, vertical_distance
 
     def _calculate_angle(self, l_location):
@@ -111,7 +106,7 @@ class Boid(dronekit.Vehicle):
         return self._buddy_id[n-1], self._buddy_flight_level[n-1], self._buddy_location[n-1].lat, self._buddy_location[n-1].lon, self._buddy_location[n-1].alt, self._buddy_distance[n-1], self._buddy_groundspeed[n-1]
 
     def separation(self):
-        pass
+        NotImplemented
 
     def alignment(self):
         buddies_average_groundspeed = 0
@@ -133,10 +128,8 @@ class Boid(dronekit.Vehicle):
         alt_mean = alt_summ/3
         buddies_center = dronekit.LocationGlobalRelative(
             lat_mean, lon_mean, alt_mean)
-        # print ('center is', lat_mean,lon_mean,alt_mean)
         distance = self._calculate_distance_fine(
             buddies_center.lat, buddies_center.lon, buddies_center.alt)
-        # print ('distance is', distance)
         return buddies_center, distance
 
     def implement_corrections(self):
@@ -158,6 +151,3 @@ class Boid(dronekit.Vehicle):
 
     def goto_poi(self):
         self.simple_goto(self._poi)
-        # print("Going to ", self._poi.lat)
-        # print("Going to ", self._poi.lon)
-        # print("Going to ", self._poi.alt)
