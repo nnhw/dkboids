@@ -1,5 +1,6 @@
 from __future__ import print_function
 import dronekit
+import time
 
 import struct
 import socket
@@ -7,6 +8,25 @@ import exceptions
 import boid_def
 import re
 from sys import exit
+
+
+def data_flow_handler_out(vehicle, rate, connection):
+    counter = 0
+    while True:
+        time.sleep(1/rate)
+        connection.send_data((vehicle._id, counter, vehicle._flight_level, vehicle.location.global_relative_frame.lat,
+                              vehicle.location.global_relative_frame.lon, vehicle.location.global_relative_frame.alt, vehicle.groundspeed))
+        counter += 1
+
+
+def data_flow_handler_in(vehicle, rate, connection, swarming):
+    while True:
+        time.sleep(1/(rate))
+        data = connection.receive_data()
+        vehicle.analyze_data(data)
+        if swarming is True:
+            vehicle.implement_corrections()
+            vehicle.goto_poi()
 
 
 def safe_dk_connect(connection_string, baudrate, id):

@@ -5,10 +5,15 @@ import cmd
 import time
 from threading import Thread
 
+# local import
 import connection
 import guidance
 
+# fleet configuration
+boids_number = 10
 
+
+# argument configuration
 parser = argparse.ArgumentParser(
     description='DroneKit experiments.')
 parser.add_argument('--master',
@@ -27,45 +32,37 @@ if not args.id:
 else:
     id = int(args.id)
 
-boids_number = 10
 
-
+# thread configuration
 def start_data_flow_out():
-    data_flow_out_thread = Thread(target=data_flow_handler_out)
+    data_flow_out_thread = Thread(
+        target=connection.data_flow_handler_out, args=(
+            vehicle, base_update_rate_hz, connection_buddy))
     data_flow_out_thread.daemon = True
     data_flow_out_thread.start()
 
 
 def start_data_flow_in():
-    data_flow_in_thread = Thread(target=data_flow_handler_in)
+    data_flow_in_thread = Thread(target=connection.data_flow_handler_in, args=(
+        vehicle, base_update_rate_hz*boids_number, connection_buddy, swarming))
     data_flow_in_thread.daemon = True
     data_flow_in_thread.start()
 
-
-def data_flow_handler_out():
-    global base_update_rate_hz
-    counter = 0
-    while True:
-        time.sleep(1/base_update_rate_hz)
-        connection_buddy.send_data((vehicle._id, counter, vehicle._flight_level, vehicle.location.global_relative_frame.lat,
-                                    vehicle.location.global_relative_frame.lon, vehicle.location.global_relative_frame.alt, vehicle.groundspeed))
-        counter += 1
+# utils
 
 
-def data_flow_handler_in():
-    global base_update_rate_hz
-    global swarming
-    while True:
-        time.sleep(1/(base_update_rate_hz*boids_number))
-        data = connection_buddy.receive_data()
-        vehicle.analyze_data(data)
-        if swarming is True:
-            vehicle.implement_corrections()
-            vehicle.goto_poi()
+def parse(arg):
+    'Convert a series of zero or more numbers to an argument tuple'
+    if not arg:
+        return 0
+    else:
+        return tuple(arg.split())
+
+# main cmd shell
 
 
-class ConvertShell(cmd.Cmd):
-    intro = 'Welcome to the Converter shell. Type help or ? to list commands.\n'
+class command_shell(cmd.Cmd):
+    intro = 'Welcome to the dkboids command shell. Type help or ? to list commands.\n'
     prompt = '(command) '
 
     def do_takeoff(self, arg):
@@ -76,11 +73,11 @@ class ConvertShell(cmd.Cmd):
         print("Taking off completed")
 
     def do_print_buddy(self, arg):
-        'get buddy info'
+        'get buddy <1> or <2> or <3> info'
         print(vehicle.get_buddy(int(parse(arg)[0])))
 
     def do_follow(self, arg):
-        'follow target'
+        'follow target <id>'
         vehicle.mode = VehicleMode("GUIDED")
         vehicle._follow_target_id = int(parse(arg)[0])
 
@@ -89,7 +86,7 @@ class ConvertShell(cmd.Cmd):
         vehicle._follow_target_id = 0
 
     def do_swarm(self, arg):
-        'enable swarming behavior'
+        'enable swarming behavior and go to the global point of interest'
         global swarming
         swarming = True
 
@@ -110,14 +107,6 @@ class ConvertShell(cmd.Cmd):
         return True
 
 
-def parse(arg):
-    'Convert a series of zero or more numbers to an argument tuple'
-    if not arg:
-        return 0
-    else:
-        return tuple(arg.split())
-
-
 if __name__ == "__main__":
     base_update_rate_hz = 1
     swarming = False
@@ -125,4 +114,4 @@ if __name__ == "__main__":
     connection_buddy = connection.buddy_connection(8000)
     start_data_flow_out()
     start_data_flow_in()
-    ConvertShell().cmdloop()
+    command_shell().cmdloop()
