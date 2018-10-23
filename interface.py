@@ -44,7 +44,7 @@ def start_data_flow_out():
 
 def start_data_flow_in():
     data_flow_in_thread = Thread(target=connection.data_flow_handler_in, args=(
-        vehicle, base_update_rate_hz*boids_number, connection_buddy, swarming))
+        vehicle, base_update_rate_hz*boids_number, connection_buddy))
     data_flow_in_thread.daemon = True
     data_flow_in_thread.start()
 
@@ -87,18 +87,16 @@ class command_shell(cmd.Cmd):
 
     def do_swarm(self, arg):
         'enable swarming behavior and go to the global point of interest'
-        global swarming
-        swarming = True
+        vehicle._swarming = True
 
     def do_stop_swarm(self, arg):
         'disable swarming behavior'
-        global swarming
-        swarming = False
+        vehicle._swarming = False
 
     def do_set_global_poi(self, arg):
         'set global point of interest'
-        connection_buddy.send_data((200, 0, 0, float((parse(arg))[0]), float(
-            (parse(arg))[1]), float((parse(arg))[2]), 0))
+        connection_buddy.send_data({"id": 200, "counter": 0, "flight_level": 0, "lat": float(
+            (parse(arg))[0]), "lon": float((parse(arg))[1]), "alt": float((parse(arg))[2]), "groundspeed": 0})
 
     def do_bye(self, arg):
         'Exit'
@@ -109,7 +107,6 @@ class command_shell(cmd.Cmd):
 
 if __name__ == "__main__":
     base_update_rate_hz = 1
-    swarming = False
     vehicle = connection.safe_dk_connect(args.master, args.baud, id)
     connection_buddy = connection.buddy_connection(8000)
     start_data_flow_out()

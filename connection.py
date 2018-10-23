@@ -22,16 +22,14 @@ def data_flow_handler_out(vehicle, rate, connection):
         counter += 1
 
 
-def data_flow_handler_in(vehicle, rate, connection, swarming):
+def data_flow_handler_in(vehicle, rate, connection):
     while True:
         time.sleep(1/(rate))
         data = connection.receive_data()
-        vehicle.analyze_data(data)
-        if swarming is True:
-            vehicle.implement_corrections()
-            vehicle.goto_poi()
+        vehicle.input_data(data)
 
-# interdkboids connections
+
+# inter dkboids connections
 
 
 class socket_connection(object):

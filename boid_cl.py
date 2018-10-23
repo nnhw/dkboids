@@ -18,6 +18,8 @@ class Boid(dronekit.Vehicle):
 
         self._follow_target_id = 0
 
+        self._swarming = False
+
         self._buddies = (buddy_cl.Buddy(), buddy_cl.Buddy(), buddy_cl.Buddy())
 
     def _calculate_distance_fine(self, lat, lon, alt):
@@ -29,6 +31,12 @@ class Boid(dronekit.Vehicle):
         distance = math.sqrt(pow(horizontal_distance, 2) +
                              pow(vertical_distance, 2))
         return distance, horizontal_distance, vertical_distance
+
+    def input_data(self, l_data):
+        self.analyze_data(l_data)
+        if self._swarming is True:
+            self.implement_corrections()
+            self.goto_poi()
 
     def analyze_data(self, l_data):
         if l_data['id'] == self._id:
@@ -92,16 +100,16 @@ class Boid(dronekit.Vehicle):
         return buddies_average_groundspeed
 
     def cohesion(self):
-        lat_summ = 0
-        lon_summ = 0
-        alt_summ = 0
+        lat_sum = 0
+        lon_sum = 0
+        alt_sum = 0
         for bd in self._buddies:
-            lat_summ += bd.location.lat
-            lon_summ += bd.location.lon
-            alt_summ += bd.location.alt
-        lat_mean = lat_summ/3
-        lon_mean = lon_summ/3
-        alt_mean = alt_summ/3
+            lat_sum += bd.location.lat
+            lon_sum += bd.location.lon
+            alt_sum += bd.location.alt
+        lat_mean = lat_sum/3
+        lon_mean = lon_sum/3
+        alt_mean = alt_sum/3
         buddies_center = dronekit.LocationGlobalRelative(
             lat_mean, lon_mean, alt_mean)
         distance = self._calculate_distance_fine(
