@@ -79,7 +79,12 @@ def arm_and_takeoff(vehicle, aTargetAltitude, safety):
         time.sleep(1)
 
     # Setting mode to AUTO
-    vehicle.mode = VehicleMode("AUTO")
+
+    while vehicle.mode != VehicleMode("AUTO"):
+        print(" Trying to set AUTO mode again...")
+        vehicle.mode = VehicleMode("AUTO")
+        time.sleep(1)
+
     print("Taking off!")
     time.sleep(3)
 
